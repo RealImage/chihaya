@@ -63,8 +63,7 @@ var testPeers = []struct {
 func getPeerStore() (*redigomock.Conn, *peerStore) {
 	conn := redigomock.NewConn()
 	pool := redigo.Pool{
-		MaxIdle:     10,
-		IdleTimeout: 240 * time.Second,
+		MaxIdle: 10,
 		Dial: func() (redigo.Conn, error) {
 			return conn, nil
 		},
