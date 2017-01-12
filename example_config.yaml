@@ -31,10 +31,11 @@ chihaya:
 #     instance: 0
 #     max_numwant: 100
 #     max_idle: 100
+#     idle_timeout: 2m
 #     host: 127.0.0.1
 #     port: 6379
 #     gc_interval: 15m 
-#     peer_liftetime: 15m
+#     peer_lifetime: 15m
 
   prehooks:
   - name: jwt
