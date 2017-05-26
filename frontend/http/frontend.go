@@ -79,8 +79,9 @@ func (t *Frontend) Stop() {
 
 func (t *Frontend) handler() http.Handler {
 	router := httprouter.New()
-	router.GET("/announce", t.announceRoute)
-	router.GET("/scrape", t.scrapeRoute)
+	router.GET("/tracker/announce", t.announceRoute)
+	router.GET("/tracker/scrape", t.scrapeRoute)
+	router.GET("/tracker/check", t.check)
 	return router
 }
 
@@ -188,4 +189,9 @@ func (t *Frontend) scrapeRoute(w http.ResponseWriter, r *http.Request, _ httprou
 	}
 
 	go t.logic.AfterScrape(context.Background(), req, resp)
+}
+
+func (t *Frontend) check(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("STILL-ALIVE"))
 }
