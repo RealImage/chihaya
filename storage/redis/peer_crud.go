@@ -44,16 +44,10 @@ func removePeers(s *peerStore, infoHash bittorrent.InfoHash, peerType string, pk
 	return nil
 }
 
-// Prunes the existing infohash swarm for any old peers before
-// returning range of valid peers
 func getPeers(s *peerStore, infoHash bittorrent.InfoHash, peerType string, numWant int, peers []bittorrent.Peer, excludePeers bittorrent.Peer) ([]bittorrent.Peer, error) {
 	conn := s.connPool.Get()
 	defer conn.Close()
 	Key := fmt.Sprintf("%s:%s", peerType, infoHash)
-	_, err := conn.Do("ZREMRANGEBYSCORE", Key, "-inf", fmt.Sprintf("(%d", time.Now().Add(-s.peerLifetime).Unix()))
-	if err != nil {
-		return nil, err
-	}
 	peerList, err := redigo.Strings(conn.Do("ZRANGE", Key, 0, -1))
 	if err != nil {
 		return nil, err
@@ -69,6 +63,14 @@ func getPeers(s *peerStore, infoHash bittorrent.InfoHash, peerType string, numWa
 		peers = append(peers, decodedPeer)
 	}
 	return peers, nil
+}
+
+func pruneExpiredPeersByType(s *peerStore, infoHash bittorrent.InfoHash, peerType string) error {
+	conn := s.connPool.Get()
+	defer conn.Close()
+	Key := fmt.Sprintf("%s:%s", peerType, infoHash)
+	_, err := conn.Do("ZREMRANGEBYSCORE", Key, "-inf", fmt.Sprintf("(%d", time.Now().Add(-s.peerLifetime).Unix()))
+	return err
 }
 
 func getPeersLength(s *peerStore, infoHash bittorrent.InfoHash, peerType string) (int, error) {

@@ -109,7 +109,6 @@ func ipType(ip net.IP) string {
 
 func (s *peerStore) PutSeeder(infoHash bittorrent.InfoHash, p bittorrent.Peer) error {
 	panicIfClosed(s.closed)
-
 	pk := newPeerKey(p)
 	return addPeer(s, infoHash, s.seederKeyPrefix+ipType(p.IP), pk)
 }
@@ -145,6 +144,15 @@ func (s *peerStore) GraduateLeecher(infoHash bittorrent.InfoHash, p bittorrent.P
 	return nil
 }
 
+func (s *peerStore) pruneExpiredPeers(infoHash bittorrent.InfoHash, ipType string) error {
+	err := pruneExpiredPeersByType(s, infoHash, s.seederKeyPrefix+ipType)
+	if err != nil {
+		return err
+	}
+	err = pruneExpiredPeersByType(s, infoHash, s.leecherKeyPrefix+ipType)
+	return err
+}
+
 // Announce as many peers as possible based on the announcer being
 // a seeder or leecher
 func (s *peerStore) AnnouncePeers(infoHash bittorrent.InfoHash, seeder bool, numWant int, announcer bittorrent.Peer) (peers []bittorrent.Peer, err error) {
@@ -153,6 +161,10 @@ func (s *peerStore) AnnouncePeers(infoHash bittorrent.InfoHash, seeder bool, num
 		numWant = s.maxNumWant
 	}
 
+	err = s.pruneExpiredPeers(infoHash, ipType(announcer.IP))
+	if err != nil {
+		return nil, err
+	}
 	if seeder {
 		peers, err = getPeers(s, infoHash, s.leecherKeyPrefix+ipType(announcer.IP), numWant, peers, bittorrent.Peer{})
 		if err != nil {
@@ -176,6 +188,10 @@ func (s *peerStore) ScrapeSwarm(infoHash bittorrent.InfoHash, v6 bool) (resp bit
 	ipType := ipv4
 	if v6 {
 		ipType = ipv6
+	}
+	err := s.pruneExpiredPeers(infoHash, ipType)
+	if err != nil {
+		return
 	}
 	complete, err := getPeersLength(s, infoHash, s.seederKeyPrefix+ipType)
 	if err != nil {
