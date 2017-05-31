@@ -109,7 +109,6 @@ func ipType(ip net.IP) string {
 
 func (s *peerStore) PutSeeder(infoHash bittorrent.InfoHash, p bittorrent.Peer) error {
 	panicIfClosed(s.closed)
-
 	pk := newPeerKey(p)
 	return addPeer(s, infoHash, s.seederKeyPrefix+ipType(p.IP), pk)
 }
@@ -151,6 +150,15 @@ func (s *peerStore) AnnouncePeers(infoHash bittorrent.InfoHash, seeder bool, num
 	panicIfClosed(s.closed)
 	if numWant > s.maxNumWant {
 		numWant = s.maxNumWant
+	}
+
+	err = pruneExpiredPeers(s, infoHash, s.leecherKeyPrefix+ipType(announcer.IP))
+	if err != nil {
+		return nil, err
+	}
+	err = pruneExpiredPeers(s, infoHash, s.seederKeyPrefix+ipType(announcer.IP))
+	if err != nil {
+		return nil, err
 	}
 
 	if seeder {
