@@ -65,7 +65,7 @@ func getPeers(s *peerStore, infoHash bittorrent.InfoHash, peerType string, numWa
 	return peers, nil
 }
 
-func pruneExpiredPeers(s *peerStore, infoHash bittorrent.InfoHash, peerType string) error {
+func pruneExpiredPeersByType(s *peerStore, infoHash bittorrent.InfoHash, peerType string) error {
 	conn := s.connPool.Get()
 	defer conn.Close()
 	Key := fmt.Sprintf("%s:%s", peerType, infoHash)
