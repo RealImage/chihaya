@@ -25,6 +25,7 @@ type Config struct {
 	Instance     int           `yaml:"instance"`
 	MaxNumWant   int           `yaml:"max_numwant"`
 	MaxIdle      int           `yaml:"max_idle"`
+	MaxActive    int           `yaml:"max_active"`
 	Host         string        `yaml:"host"`
 	Port         string        `yaml:"port"`
 	PeerLifetime time.Duration `yaml:"peer_lifetime"`
@@ -41,9 +42,11 @@ type peerStore struct {
 	leecherKeyPrefix string
 }
 
-func newPool(server string, maxIdle int, idleTimeout time.Duration) redigo.Pool {
+func newPool(server string, maxIdle, maxActive int, idleTimeout time.Duration) redigo.Pool {
 	return redigo.Pool{
 		MaxIdle:     maxIdle,
+		MaxActive:   maxActive,
+		Wait:        true,
 		IdleTimeout: idleTimeout,
 		Dial: func() (redigo.Conn, error) {
 			c, err := redigo.Dial("tcp", server)
@@ -61,7 +64,8 @@ func newPool(server string, maxIdle int, idleTimeout time.Duration) redigo.Pool 
 
 // New creates a new peerstore backed by redis.
 func New(cfg Config) (storage.PeerStore, error) {
-	pool := newPool(cfg.Host+":"+cfg.Port, cfg.MaxIdle, cfg.IdleTimeout)
+	pool := newPool(cfg.Host+":"+cfg.Port, cfg.MaxIdle,
+		cfg.MaxActive, cfg.IdleTimeout)
 	conn := pool.Get()
 	defer conn.Close()
 
