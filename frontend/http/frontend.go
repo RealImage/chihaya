@@ -59,19 +59,15 @@ type Config struct {
 type Frontend struct {
 	grace *graceful.Server
 
-	logic  frontend.TrackerLogic
-	router *httprouter.Router
-	n      http.Handler
+	logic frontend.TrackerLogic
 	Config
 }
 
 // NewFrontend allocates a new instance of a Frontend.
-func NewFrontend(logic frontend.TrackerLogic, cfg Config, n http.Handler) *Frontend {
+func NewFrontend(logic frontend.TrackerLogic, cfg Config) *Frontend {
 	return &Frontend{
 		logic:  logic,
 		Config: cfg,
-		router: httprouter.New(),
-		n:      n,
 	}
 }
 
@@ -82,17 +78,15 @@ func (t *Frontend) Stop() {
 }
 
 func (t *Frontend) handler() http.Handler {
-	t.router.GET("/tracker/announce", t.announceRoute)
-	t.router.GET("/tracker/scrape", t.scrapeRoute)
-	t.router.GET("/tracker/check", t.check)
-	if t.n == nil {
-		return t.router
-	}
-	return t.n
+	return t.Router()
 }
 
-func (t *Frontend) GetRouter() *httprouter.Router {
-	return t.router
+func (t *Frontend) Router() *httprouter.Router {
+	router := httprouter.New()
+	router.GET("/tracker/announce", t.announceRoute)
+	router.GET("/tracker/scrape", t.scrapeRoute)
+	router.GET("/tracker/check", t.check)
+	return router
 }
 
 // ListenAndServe listens on the TCP network address t.Addr and blocks serving
