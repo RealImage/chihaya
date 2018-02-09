@@ -59,20 +59,19 @@ type Config struct {
 type Frontend struct {
 	grace *graceful.Server
 
-	router *httprouter.Router
 	logic  frontend.TrackerLogic
+	router *httprouter.Router
+	n      http.Handler
 	Config
 }
 
 // NewFrontend allocates a new instance of a Frontend.
-func NewFrontend(logic frontend.TrackerLogic, cfg Config, router *httprouter.Router) *Frontend {
-	if router == nil {
-		router = httprouter.New()
-	}
+func NewFrontend(logic frontend.TrackerLogic, cfg Config, n http.Handler) *Frontend {
 	return &Frontend{
 		logic:  logic,
 		Config: cfg,
-		router: router,
+		router: httprouter.New(),
+		n:      n,
 	}
 }
 
@@ -86,6 +85,13 @@ func (t *Frontend) handler() http.Handler {
 	t.router.GET("/tracker/announce", t.announceRoute)
 	t.router.GET("/tracker/scrape", t.scrapeRoute)
 	t.router.GET("/tracker/check", t.check)
+	if t.n == nil {
+		return t.router
+	}
+	return t.n
+}
+
+func (t *Frontend) GetRouter() *httprouter.Router {
 	return t.router
 }
 
