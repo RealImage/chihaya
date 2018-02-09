@@ -78,6 +78,10 @@ func (t *Frontend) Stop() {
 }
 
 func (t *Frontend) handler() http.Handler {
+	return t.Router()
+}
+
+func (t *Frontend) Router() *httprouter.Router {
 	router := httprouter.New()
 	router.GET("/tracker/announce", t.announceRoute)
 	router.GET("/tracker/scrape", t.scrapeRoute)
